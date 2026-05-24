@@ -24,26 +24,26 @@
 
 \title[mode=sub]{ImageCLEF at CLEF 2026}
 
-%%% TODO: Add your ORCID, update email/URL, add co-authors if any
 \author[1]{Pratik Priyanshu}[%
-  email=pratik.priyanshu@example.com,
+  orcid=0009-0006-6192-3767,
+  email=pratikpriyanshu12345@gmail.com,
 ]
 \address[1]{SRH University Heidelberg, Heidelberg, Germany}
 
-%%% TODO: Add supervisor or advisor as co-author if appropriate
-% \author[1]{Second Author}[%
-%   email=second@example.com,
-% ]
+\author[1]{Swati Chandna}[%
+  orcid=0009-0003-8393-5337,
+]
 
 %%% NOTE: Our leaderboard username on AI4Media-Bench is "pratikpriyanshu"
 
 \begin{abstract}
-This paper describes the SRH-ReliableAI system submitted to the ImageCLEF 2026 Multimodal Reasoning task, which challenges participants to answer multilingual exam questions across visual and textual modalities in four tracks: Visual MCQ, Textual MCQ, Visual OpenQA, and Textual OpenQA.
-We employ Qwen3-VL-8B-Thinking, an 8-billion parameter vision-language model with native chain-of-thought reasoning, fine-tuned via QLoRA on 16,300 EXAMS-V training samples.
-Our approach incorporates subject-aware and language-matched prompting as zero-cost enhancements, alongside a multi-stage answer extraction pipeline designed for thinking-mode models.
-We achieve \textbf{1st place on Textual MCQ} (accuracy 0.7538) and \textbf{2nd place on Textual OpenQA} (COMET 0.5285), while obtaining lower scores on visual reasoning tracks (Visual MCQ: 0.5076, Visual OpenQA: 0.4286 COMET).
-Our analysis reveals a significant performance gap between textual and visual reasoning, suggesting that current thinking-mode VLMs excel at language-driven reasoning but face challenges with spatial and diagrammatic understanding.
-We provide ablation studies on prompt engineering strategies, answer extraction design, and per-language performance.
+This paper describes our submission to the ImageCLEF 2026 Multimodal Reasoning task as team SRH-ReliableAI.
+The task requires answering multilingual exam questions in four tracks: Visual MCQ, Textual MCQ, Visual OpenQA, and Textual OpenQA.
+We fine-tune Qwen3-VL-8B-Thinking, an 8-billion parameter vision-language model with built-in chain-of-thought reasoning, using QLoRA on 16,300 EXAMS-V training samples.
+We also add subject-aware and language-matched prompting at no extra computational cost, and design a multi-stage answer extraction pipeline for handling the model's thinking tokens.
+Our system ranks \textbf{1st on Textual MCQ} (accuracy 0.7538) and \textbf{2nd on Textual OpenQA} (COMET 0.5285), while visual reasoning tracks prove more challenging (Visual MCQ: 0.5076, Visual OpenQA: 0.4286 COMET).
+A notable finding is the large gap between textual and visual performance: the model reasons well over text but struggles with diagrams and spatial content.
+We report ablation studies on prompt strategies, answer extraction, and per-language breakdowns.
 \end{abstract}
 
 \begin{keywords}
@@ -65,16 +65,17 @@ The ImageCLEF 2026 Multimodal Reasoning task~\cite{ImageCLEFMR2026}, part of the
 The task features four tracks: Visual MCQ and Textual MCQ (multiple-choice, evaluated by accuracy) and Visual OpenQA and Textual OpenQA (open-ended, evaluated by COMET~\cite{comet}, BLEU, ROUGE-L, and METEOR).
 Questions span six languages (English, Bulgarian, Chinese, Croatian, Italian, Serbian) and cover diverse academic subjects, making the task both multimodal and multilingual.
 
-Recent advances in vision-language models (VLMs) with native reasoning capabilities---exemplified by models like Qwen3-VL~\cite{qwen3} and DeepSeek-R1~\cite{deepseekr1}---present an opportunity to tackle such tasks through internal chain-of-thought (CoT) reasoning rather than external prompting pipelines.
-These ``thinking'' models emit structured reasoning tokens (\texttt{<think>...\allowbreak</think>}) before producing a final answer, potentially improving accuracy on questions that require multi-step reasoning.
+A recent class of VLMs---including Qwen3-VL~\cite{qwen3} and DeepSeek-R1~\cite{deepseekr1}---can now perform chain-of-thought (CoT) reasoning internally, emitting structured reasoning tokens (\texttt{<think>...\allowbreak</think>}) before producing a final answer.
+This makes them a natural fit for exam-style questions that require multi-step reasoning.
 
-In this paper, we present the SRH-ReliableAI system (leaderboard username: \texttt{pratikpriyanshu}), which applies Qwen3-VL-8B-Thinking---an 8B-parameter VLM from the Normal ($\geq$8B) category---fine-tuned via QLoRA~\cite{qlora} on the EXAMS-V~\cite{examsv} training set.
-Our contributions are:
+We apply one such model, Qwen3-VL-8B-Thinking (8B parameters, Normal $\geq$8B category), fine-tuned with QLoRA~\cite{qlora} on EXAMS-V~\cite{examsv}.
+Our leaderboard username is \texttt{pratikpriyanshu}.
+The main contributions of this work are:
 \begin{enumerate}
-    \item Application of a \textit{thinking-mode} VLM to multilingual multimodal exam question answering, achieving 1st place on Textual MCQ.
-    \item QLoRA fine-tuning of Qwen3-VL-8B-Thinking on EXAMS-V, demonstrating substantial gains over zero-shot inference.
-    \item Subject-aware and language-matched prompting as zero-cost accuracy improvements.
-    \item Analysis of a pronounced \textit{textual vs.\ visual reasoning gap}, offering insights into the current strengths and limitations of thinking VLMs.
+    \item We apply a thinking-mode VLM to multilingual exam question answering, ranking 1st on Textual MCQ.
+    \item We show that QLoRA fine-tuning on EXAMS-V clearly outperforms zero-shot inference.
+    \item We introduce subject-aware and language-matched prompting as zero-cost accuracy improvements.
+    \item We document a large textual vs.\ visual reasoning gap and investigate what drives it.
 \end{enumerate}
 
 
@@ -83,21 +84,21 @@ Our contributions are:
 \label{sec:related}
 
 \paragraph{Vision-Language Models for Exam QA.}
-Large VLMs such as GPT-4V, Gemini, and the open-weight Qwen-VL family~\cite{qwen2.5vl} have demonstrated strong performance on multimodal benchmarks including MMMU~\cite{mmmu}.
-The EXAMS-V benchmark~\cite{examsv} specifically targets multilingual exam questions with visual content, providing a challenging testbed that combines language understanding with diagram interpretation.
+Large VLMs like GPT-4V, Gemini, and the open-weight Qwen-VL family~\cite{qwen2.5vl} perform well on multimodal benchmarks such as MMMU~\cite{mmmu}.
+EXAMS-V~\cite{examsv} focuses specifically on multilingual exam questions with visual content, combining language understanding with diagram interpretation.
 
 \paragraph{Chain-of-Thought Reasoning.}
-Wei et al.~\cite{cot} showed that prompting LLMs to reason step-by-step substantially improves performance on complex tasks.
-Self-consistency~\cite{selfconsistency} extends this by sampling multiple reasoning paths and selecting the majority answer.
-Recent models like DeepSeek-R1~\cite{deepseekr1} and Qwen3~\cite{qwen3} internalize this reasoning through dedicated thinking tokens, removing the need for explicit CoT prompting.
+Wei et al.~\cite{cot} showed that step-by-step prompting substantially improves LLM performance on complex tasks.
+Wang et al.~\cite{selfconsistency} extended this with self-consistency, sampling multiple reasoning paths and taking a majority vote.
+More recently, models like DeepSeek-R1~\cite{deepseekr1} and Qwen3~\cite{qwen3} have moved CoT reasoning inside the model itself through dedicated thinking tokens, removing the need for explicit prompting.
 
 \paragraph{Parameter-Efficient Fine-Tuning.}
-LoRA~\cite{lora} enables efficient adaptation of large models by training low-rank decomposition matrices.
-QLoRA~\cite{qlora} combines this with 4-bit quantization, making it feasible to fine-tune models with billions of parameters on a single GPU.
+LoRA~\cite{lora} adapts large models efficiently by training low-rank decomposition matrices.
+QLoRA~\cite{qlora} adds 4-bit quantization on top, making it practical to fine-tune billion-parameter models on a single GPU.
 
 \paragraph{ImageCLEF Multimodal Reasoning.}
-The 2025 edition of this task~\cite{imageclefmr2025} saw the winning team achieve 81.4\% accuracy using an OCR-VLM ensemble pipeline with older models.
-The 2026 edition~\cite{ImageCLEFMR2026} expands the task to include open-ended question answering tracks and provides separate visual and textual evaluation splits.
+In the 2025 edition of this task~\cite{imageclefmr2025}, the winning team reached 81.4\% accuracy with an OCR-VLM ensemble pipeline.
+The 2026 edition~\cite{ImageCLEFMR2026} adds open-ended question answering tracks and separates visual from textual evaluation.
 
 
 %% ═══════════════════════════════════════════════════════════════
@@ -222,7 +223,7 @@ For example, Chinese questions receive the answer instruction in Chinese rather 
 \subsection{Answer Extraction}
 \label{sec:extraction}
 
-A critical challenge with thinking-mode models is extracting the final answer from outputs that contain potentially lengthy reasoning.
+Extracting the final answer from a thinking model's output is harder than it sounds---the response can contain hundreds of tokens of reasoning before the actual answer.
 The model produces responses of the form:
 
 \begin{lstlisting}
@@ -242,8 +243,9 @@ Our extraction pipeline operates in stages:
     \item \textbf{Last-letter fallback}: Scan the response in reverse for any A--E character. Default to ``A'' if all extraction fails.
 \end{enumerate}
 
-We find that the \texttt{max\_new\_tokens} budget is critical: setting it too low (e.g., 50 tokens) truncates the thinking process, causing the model to never emit the \texttt{</think>} tag.
-We use 1024 tokens for MCQ inference, which provides sufficient budget for reasoning while keeping inference tractable.
+Getting the \texttt{max\_new\_tokens} budget right turned out to be critical.
+Set it too low (e.g., 50 tokens) and the model never finishes thinking---it gets cut off before emitting the \texttt{</think>} tag.
+We settled on 1024 tokens for MCQ, which gives the model enough room to reason without making inference too slow.
 
 \subsection{OpenQA Inference}
 \label{sec:openqa}
@@ -309,22 +311,22 @@ Table~\ref{tab:official} presents our official results across all four tracks.
 
 \begin{table}[t]
 \centering
-\caption{Official competition results. Rank is among all participants in each track.}
+\caption{Official competition results across all four tracks.}
 \label{tab:official}
-\begin{tabular}{lcccc}
+\begin{tabular}{lccc}
 \toprule
-\textbf{Track} & \textbf{Metric} & \textbf{Score} & \textbf{Rank} & \textbf{Best} \\
+\textbf{Track} & \textbf{Metric} & \textbf{Our Score} & \textbf{Top Score} \\
 \midrule
-Visual MCQ     & Accuracy & 0.5076 & 8/9  & 0.8406 \\
-\textbf{Textual MCQ}    & Accuracy & \textbf{0.7538} & \textbf{1/3}  & \textbf{0.7538} \\
-Visual OpenQA  & COMET    & 0.4286 & 8/8  & 0.6488 \\
-\textbf{Textual OpenQA} & COMET    & \textbf{0.5285} & \textbf{2/2}  & 0.5285 \\
+Visual MCQ     & Accuracy & 0.5076 & 0.8406 \\
+\textbf{Textual MCQ}    & Accuracy & \textbf{0.7538} & \textbf{0.7538} \\
+Visual OpenQA  & COMET    & 0.4286 & 0.6488 \\
+\textbf{Textual OpenQA} & COMET    & \textbf{0.5285} & 0.6563 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The results reveal a clear pattern: our system excels on \textbf{textual reasoning} (1st and 2nd place) but underperforms on \textbf{visual reasoning} (8th in both visual tracks).
-We analyze this gap in Section~\ref{sec:analysis}.
+Our score matches the top score on Textual MCQ and is competitive on Textual OpenQA, while visual tracks remain challenging.
+The gap between our textual and visual performance is large, and we investigate it in Section~\ref{sec:analysis}.
 
 \subsection{Per-Language Breakdown}
 \label{sec:perlang}
@@ -333,35 +335,32 @@ Tables~\ref{tab:lang_visual_mcq} and~\ref{tab:lang_text_mcq} show the per-langua
 
 \begin{table}[t]
 \centering
-\caption{Visual MCQ accuracy by language (our system).}
+\caption{Visual MCQ accuracy by language.}
 \label{tab:lang_visual_mcq}
-\begin{tabular}{lcccccc|c}
+\begin{tabular}{ccccccc}
 \toprule
- & EN & BG & ZH & HR & IT & SR & \textbf{Overall} \\
+EN & BG & ZH & HR & IT & SR & \textbf{Overall} \\
 \midrule
-Ours & 0.572 & 0.436 & 0.418 & 0.561 & 0.556 & 0.519 & 0.508 \\
-Best & 0.856 & 0.891 & 0.781 & 0.877 & 0.907 & 0.870 & 0.841 \\
+0.572 & 0.436 & 0.418 & 0.561 & 0.556 & 0.519 & 0.508 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table}[t]
 \centering
-\caption{Textual MCQ accuracy by language (our system, 1st place).}
+\caption{Textual MCQ accuracy by language (best overall score in this track).}
 \label{tab:lang_text_mcq}
-\begin{tabular}{lccccc|c}
+\begin{tabular}{ccccccc}
 \toprule
- & EN & BG & ZH & HR & IT & \textbf{Overall} \\
+EN & BG & ZH & HR & IT & SR & \textbf{Overall} \\
 \midrule
-Ours & 0.838 & 0.676 & 0.648 & 0.803 & 0.850 & 0.754 \\
-2nd  & 0.792 & 0.610 & 0.689 & 0.755 & 0.763 & 0.708 \\
+0.838 & 0.676 & 0.648 & 0.803 & 0.850 & 0.807 & 0.754 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-On Textual MCQ, our system leads in four of five languages (EN, BG, HR, IT), with the 2nd-place system outperforming ours only on Chinese (0.689 vs.\ 0.648).
-The strongest performance is on Italian (0.850) and English (0.838), while Chinese and Bulgarian are weakest.
-This pattern is consistent across both MCQ tracks and aligns with the model's multilingual pre-training distribution, where European languages and English dominate.
+On Textual MCQ, Italian (0.850) and English (0.838) are our strongest languages, while Chinese (0.648) and Bulgarian (0.676) lag behind.
+This pattern holds across both MCQ tracks and likely reflects the model's pre-training data distribution, which favours English and European languages.
 
 \subsection{OpenQA Results}
 \label{sec:openqa_results}
@@ -382,8 +381,8 @@ Textual OpenQA & 0.529 & 0.114 & 0.230 & 0.159 \\
 \end{tabular}
 \end{table}
 
-The Textual OpenQA scores are substantially higher across all metrics, consistent with the MCQ trend.
-The very low BLEU scores (0.038 on Visual) indicate significant surface-form mismatches, while the higher COMET scores suggest that the semantic content partially aligns with reference answers.
+The same textual--visual pattern shows up here.
+The very low BLEU on Visual OpenQA (0.038) suggests our answers often use different words than the reference, though the COMET scores indicate the meaning is at least partially correct.
 
 
 %% ═══════════════════════════════════════════════════════════════
@@ -393,64 +392,63 @@ The very low BLEU scores (0.038 on Visual) indicate significant surface-form mis
 \subsection{The Textual--Visual Performance Gap}
 \label{sec:gap}
 
-The most striking finding is the large gap between textual and visual track performance.
-On MCQ, our system achieves 0.754 on textual questions (1st place) but only 0.508 on visual questions (8th place)---a 24.6 percentage point difference.
-This gap persists across all languages.
+The most notable pattern in our results is the gap between textual and visual tracks.
+On MCQ, we score 0.754 on textual questions but only 0.508 on visual ones---a difference of nearly 25 percentage points that holds across all languages.
 
-We identify several contributing factors:
+We see three likely reasons for this:
 
-\paragraph{(1) Thinking mode favours linguistic reasoning.}
-The model's internal reasoning process operates through natural language tokens.
-For textual questions, this reasoning directly engages with the question content.
-For visual questions requiring interpretation of diagrams, graphs, or chemical structures, the reasoning must first describe visual content in text before reasoning about it---an additional step that introduces information loss.
+\paragraph{(1) Thinking mode is inherently linguistic.}
+The model reasons in natural language tokens.
+For textual questions, this works well---the reasoning engages directly with the question content.
+But for visual questions with diagrams, graphs, or chemical structures, the model must first describe what it sees in words before it can reason about it.
+That extra translation step loses information.
 
 \paragraph{(2) Submission timing.}
-The Visual MCQ track was our first submission, made earlier in the development cycle.
-Subsequent submissions (Textual MCQ, OpenQA) benefited from iterative improvements to the answer extraction pipeline and inference configuration.
-In particular, the critical fix for thinking-token extraction (ensuring sufficient \texttt{max\_new\_tokens}) was identified during development and may not have been applied to the initial Visual MCQ submission.
+Visual MCQ was our first submission, made early in the development cycle.
+Later submissions benefited from iterative improvements---most importantly, a fix to the answer extraction pipeline that ensured enough generation tokens for the model to complete its thinking.
+This fix may not have been in place for the initial Visual MCQ submission.
 
-\paragraph{(3) Fine-tuning data distribution.}
-While EXAMS-V contains both visual and textual questions, the fine-tuning process optimizes for answer letter prediction without explicitly training visual understanding.
-The textual reasoning capabilities of the base model may benefit more from this format than visual capabilities.
+\paragraph{(3) Fine-tuning target.}
+Although EXAMS-V contains both visual and textual questions, our fine-tuning only trains the model to predict the correct answer letter.
+It does not explicitly teach visual understanding, so textual reasoning likely benefits more from this setup.
 
 \subsection{OpenQA Limitations}
 \label{sec:openqa_limits}
 
-Our OpenQA performance is limited by two design decisions:
+Two design choices hurt our OpenQA scores:
 
-\paragraph{No task-specific fine-tuning.}
-The model was fine-tuned exclusively on MCQ data (output: single letter A--E).
-OpenQA requires free-form text generation---a fundamentally different output modality.
-The competition provides dedicated OpenQA training data (528 Visual, $\sim$300 Textual samples with reference answers) that we did not incorporate into fine-tuning.
+\paragraph{No OpenQA-specific fine-tuning.}
+We fine-tuned only on MCQ data, where the target output is a single letter (A--E).
+OpenQA needs free-form text, which is a fundamentally different task.
+The competition actually provides dedicated OpenQA training data (528 Visual, $\sim$300 Textual samples with answers), but we did not use it---an oversight that likely cost us.
 
-\paragraph{Thinking token budget.}
-For OpenQA, the model's thinking tokens compete with the answer tokens for the generation budget.
-With \texttt{max\_new\_tokens=512}, a substantial portion may be consumed by reasoning, leaving limited capacity for the actual answer.
-Unlike MCQ where the answer is a single character, OpenQA answers require sufficient tokens.
+\paragraph{Thinking tokens eat into the answer budget.}
+With \texttt{max\_new\_tokens=512}, the model's internal reasoning can consume most of the generation budget, leaving too few tokens for the actual answer.
+For MCQ this is not a problem since the answer is a single character, but OpenQA answers need real space.
 
 \subsection{Answer Extraction Ablation}
 \label{sec:extraction_ablation}
 
-During development, we observed that answer extraction from thinking-mode outputs is a critical component.
-On the EXAMS-V validation set, we measured the following zero-shot accuracies:
+One thing we learned early on is that answer extraction matters enormously with thinking-mode models.
+On the EXAMS-V validation set (zero-shot), different extraction approaches gave very different accuracy numbers:
 
 \begin{itemize}
-    \item Na\"ive extraction (first A--E character): $\sim$25\% --- the model's thinking tokens contain many incidental A--E characters that are not answers.
-    \item Post-\texttt{</think>} extraction with insufficient tokens (\texttt{max\_new\_tokens=50}): $\sim$25\% --- thinking is truncated, no \texttt{</think>} tag emitted.
+    \item Na\"ive extraction (first A--E character found): $\sim$25\%. The thinking tokens are full of incidental A--E characters that are not the answer.
+    \item Post-\texttt{</think>} extraction with too few tokens (\texttt{max\_new\_tokens=50}): $\sim$25\%. The reasoning gets cut off and the \texttt{</think>} tag never appears.
     \item Post-\texttt{</think>} extraction with 4096 tokens: $\sim$55\%.
-    \item Full extraction pipeline with 1024 tokens: $\sim$60\%.
+    \item Our full extraction pipeline with 1024 tokens: $\sim$60\%.
 \end{itemize}
 
-This demonstrates that for thinking-mode VLMs, the answer extraction strategy alone can account for a $\sim$35 percentage point difference in measured accuracy, underscoring the importance of this component.
+That is a 35 percentage point swing from extraction alone---the model's actual reasoning ability stays the same, but how you read its output changes the score dramatically.
 
 \subsection{Prompt Engineering Observations}
 \label{sec:prompt_ablation}
 
-We evaluate three prompt variants on a 500-sample stratified validation subset.
-The \textbf{thinking} prompt consistently outperforms the direct and decomposed variants.
-The direct prompt, despite its simplicity, performs competitively because the model's native thinking mode activates regardless of prompt style---the structured thinking prompt primarily helps by setting expectations for the output format.
+On a 500-sample stratified validation subset, the \textbf{thinking} prompt consistently outperformed the direct and decomposed variants.
+Interestingly, the direct prompt was not far behind---the model's native thinking mode activates regardless of what the prompt says, so the structured prompt mainly helps by shaping the output format.
 
-The subject-aware prefix and language-matched instructions provide modest but consistent improvements as zero-cost additions, particularly benefiting non-English languages where the answer instruction in the question's language helps the model stay in the appropriate linguistic context.
+Subject-aware prefixes and language-matched instructions gave modest but steady improvements at zero cost.
+The language matching particularly helped non-English questions, where prompting in the question's language kept the model from switching to English mid-answer.
 
 \subsection{Post-Hoc MCQ Error Analysis}
 \label{sec:posthoc}
@@ -480,33 +478,33 @@ Fizika                 & 0.524 & 21  & 0.902 & 51 \\
 \end{tabular}
 \end{table}
 
-The error analysis reveals several key findings.
-First, the textual--visual gap is \textit{consistent across all subjects}: every subject shows higher accuracy on Textual MCQ than Visual MCQ, with gaps ranging from 18 to 38 percentage points.
+Several patterns stand out.
+First, the textual--visual gap is \textit{consistent across all subjects}: every single subject has higher accuracy on Textual MCQ than Visual MCQ, with gaps ranging from 18 to 38 percentage points.
 Physics (0.330 visual vs.\ 0.634 textual) and Chemistry (0.386 vs.\ 0.716) show the largest gaps, likely because these subjects rely heavily on diagram and graph interpretation in the visual track.
 Mathematics is the hardest subject on both tracks (0.298 visual, 0.651 textual), suggesting that symbolic and quantitative reasoning remains challenging regardless of modality.
 
-Second, confusion matrix analysis reveals a systematic bias toward option E on Visual MCQ: the most common error patterns are C$\rightarrow$E (65 errors), B$\rightarrow$E (51), and D$\rightarrow$E (48).
+Second, the confusion matrix shows a clear bias toward option E on Visual MCQ: the most common error patterns are C$\rightarrow$E (65 errors), B$\rightarrow$E (51), and D$\rightarrow$E (48).
 Notably, no gold answers in the Visual MCQ test set have answer key E, meaning \textit{all} E predictions are errors.
 This suggests the answer extraction pipeline may have a fallback bias when thinking-token reasoning is inconclusive on visual questions.
 
 Third, the per-language gap is consistent with pre-training data distributions.
 On both tracks, English and Italian achieve the highest accuracy, while Chinese and Bulgarian are weakest---aligning with the multilingual coverage of the Qwen3-VL model family.
 
-These findings confirm that the primary bottleneck on visual tracks is not answer extraction or prompting, but the underlying visual understanding capability of the 8B-scale model, particularly for diagram-heavy subjects.
+Taken together, these results point to visual understanding---not extraction or prompting---as the main bottleneck on visual tracks, especially for diagram-heavy subjects like Physics and Chemistry.
 
 
 %% ═══════════════════════════════════════════════════════════════
 \section{Conclusion}
 \label{sec:conclusion}
 
-We presented the SRH-ReliableAI system for the ImageCLEF 2026 Multimodal Reasoning task, based on QLoRA-fine-tuned Qwen3-VL-8B-Thinking with subject-aware and language-matched prompting.
-Our system achieves 1st place on Textual MCQ and 2nd place on Textual OpenQA, demonstrating the strength of thinking-mode VLMs for language-driven exam reasoning.
-The significant performance gap between textual and visual tracks highlights that current 8B-scale thinking VLMs remain stronger at linguistic reasoning than visual-spatial understanding.
+We described the SRH-ReliableAI system for the ImageCLEF 2026 Multimodal Reasoning task: a QLoRA-fine-tuned Qwen3-VL-8B-Thinking model with subject-aware and language-matched prompting.
+The system ranks 1st on Textual MCQ and 2nd on Textual OpenQA, showing that thinking-mode VLMs are well suited for language-driven exam reasoning.
+At the same time, the gap between textual and visual performance makes it clear that 8B-scale thinking models still have room to grow on spatial and diagrammatic understanding.
 
-For future work, we identify three directions:
-(1)~fine-tuning on OpenQA-specific training data to improve free-form answer generation;
-(2)~separate visual processing modules or visual chain-of-thought training to improve diagram and graph understanding;
-and (3)~self-consistency voting, which we implemented but could not deploy due to the high computational cost of thinking-mode inference ($\sim$30s per question).
+Three directions seem promising for future work:
+(1)~fine-tuning on the available OpenQA training data, which we left unused;
+(2)~visual-specific training or auxiliary modules to improve diagram and graph comprehension;
+and (3)~self-consistency voting, which we implemented but could not deploy because thinking-mode inference is slow ($\sim$30s per question).
 
 \paragraph{Reproducibility.}
 Our code is publicly available.\footnote{\url{https://github.com/Pratik25priyanshu20/imageclef-multimodal-reasoning-2026-}}
@@ -515,8 +513,7 @@ All experiments were conducted on a single NVIDIA H200 GPU.
 
 %% ═══════════════════════════════════════════════════════════════
 \begin{acknowledgments}
-%%% TODO: Add acknowledgments (advisor, compute provider, etc.)
-We thank SRH University Heidelberg for supporting this research. Compute resources were provided by the University DataLab.
+We thank Prof.\ Dr.-Ing.\ Swati Chandna for her guidance and supervision. Compute resources were provided by the University DataLab at SRH University Heidelberg.
 \end{acknowledgments}
 
 %% ═══════════════════════════════════════════════════════════════
