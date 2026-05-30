@@ -34,10 +34,10 @@
 
 | Track | Type | Metric | Score | Rank |
 |:------|:-----|:-------|:-----:|:----:|
-| **Textual MCQ** | Multiple-choice (text) | Accuracy | **0.7538** | **1st / 3** |
-| **Textual OpenQA** | Open-ended (text) | COMET | **0.5285** | **2nd / 2** |
-| Visual MCQ | Multiple-choice (visual) | Accuracy | 0.5076 | 8th / 9 |
-| Visual OpenQA | Open-ended (visual) | COMET | 0.4286 | 8th / 8 |
+| **Textual MCQ** | Multiple-choice (text) | Accuracy | **0.7538** | **1st** |
+| **Textual OpenQA** | Open-ended (text) | COMET | **0.5285** | **2nd** |
+| Visual MCQ | Multiple-choice (visual) | Accuracy | 0.5076 | — |
+| Visual OpenQA | Open-ended (visual) | COMET | 0.4286 | — |
 
 ---
 

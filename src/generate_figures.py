@@ -66,7 +66,7 @@ print("Saved per_language_accuracy.png")
 # ── Figure 2: Track Results Overview ──────────────────────────
 tracks = ["Visual\nMCQ", "Textual\nMCQ", "Visual\nOpenQA", "Textual\nOpenQA"]
 scores = [0.5076, 0.7538, 0.4286, 0.5285]
-ranks = ["8th/9", "1st/3", "8th/8", "2nd/2"]
+labels = ["0.5076", "0.7538\n(1st)", "0.4286", "0.5285\n(2nd)"]
 colors = [ORANGE, BLUE, ORANGE, BLUE]
 
 fig, ax = plt.subplots(figsize=(9, 5))
@@ -74,9 +74,9 @@ bars = ax.bar(tracks, scores, color=colors, edgecolor="none", width=0.6)
 bars[0].set_alpha(0.5)
 bars[2].set_alpha(0.5)
 
-for bar, rank, score in zip(bars, ranks, scores):
+for bar, label in zip(bars, labels):
     ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.02,
-            f"{score:.4f}\n({rank})", ha="center", va="bottom", color=TEXT,
+            label, ha="center", va="bottom", color=TEXT,
             fontsize=11, fontweight="bold")
 
 ax.set_ylabel("Score", fontsize=12)
